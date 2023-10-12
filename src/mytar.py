@@ -35,7 +35,7 @@ if argv[1] == 'c':
     fileContents = os.read(inputFile, fileContentsSize)
     print("Size of file " + str(fileContentsSize))
     fileNameEncoded = argv[2].encode()
-    encodeFileSize = fileContentsSize.to_bytes(10, 'big')
+    encodeFileSize = fileContentsSize.to_bytes(2, 'big')
     print("The file size as a byte area " + str(encodeFileSize))
     print("The file size from bytes is " + str(int.from_bytes(encodeFileSize, "big")))
     fileNameSize = len(fileNameEncoded)
