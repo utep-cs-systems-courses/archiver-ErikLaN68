@@ -7,47 +7,55 @@ decode = True
 
 from buf import BufferedFdWriter, BufferedFdReader, bufferedCopy
 
+def getfileNameAndSize(fileName):
+    fileNameEncoded = fileName.encode()
+    fileNameSize = len(fileNameEncoded)
+    encodeSize = fileNameSize.to_bytes(1, 'big')
+    return encodeSize, fileNameEncoded
+
+def getContentAndSize(fdInput):
+    fileStatus = os.fstat(inputFile)
+    contentSize = fileStatus.st_size
+    fileContents = os.read(inputFile, contentSize)
+    encodeFileSize = contentSize.to_bytes(2, 'big')
+    return encodeFileSize, fileContents
+
+def makeMyTarName(fileName):
+    parts = fileName.split('.')
+    return parts[0]
+    
 # Will use \e as the end of line data line
-def addFileTerm(byteAr):
-    #checks for file term char
-    temp = ''
-    currentByte = ''
-    for num,char in enumerate(byteAr):
-        temp = temp + str(char)
-        if len(temp) == 2:
-            if temp == '\e':
-                currentByte = currentByte + '\\'
-                currentByte = currentByte + temp
-            else:
-                currentByte = currentByte + temp
-        else:
-            currentByte = currentByte + str(char)
-    return currentByte + '\e'
-                
-        
+def frame(fdInput, fileName):
+    fileNameSize,fileNameEncoded = getfileNameAndSize(fileName)
+    fileContentsSize, fileContents = getContentAndSize(fdInput)
+    
+    if decode: print("Size of file " + str(fileContentsSize))
+    if decode: print("The file size as a byte area " + str(int.from_bytes(fileContentsSize, "big")))
+    if decode: print("The file size from bytes is " + str(fileContentsSize))
+    if decode: print("The size of the file name " + str(fileNameSize))
+    
+    newByteArray = '-|'.encode() + fileNameSize + '-|'.encode() + fileNameEncoded + '-|'.encode() + fileContentsSize + '-|'.encode() + fileContents
+    return newByteArray
+
+
 
 if len(argv) < 2:
     print("Not a valid amount of inputs")
     exit
 
 if argv[1] == 'c':
+    argv.remove(argv[0])
+    argv.remove(argv[0])
+    myTarFileName = ''
+    newByteArray = '-'.encode()
+    for fileName in argv:
+        inputFile = os.open(fileName, os.O_RDONLY)
+        newByteArray = newByteArray + frame(inputFile, fileName)
+        myTarFileName = myTarFileName + makeMyTarName(fileName)
     
-    inputFile = os.open(argv[2], os.O_RDONLY)
-    fileContentsSize = os.path.getsize(inputFile)
-    fileContents = os.read(inputFile, fileContentsSize)
-    if decode: print("Size of file " + str(fileContentsSize))
-    fileNameEncoded = argv[2].encode()
-    encodeFileSize = fileContentsSize.to_bytes(2, 'big')
-    if decode: print("The file size as a byte area " + str(encodeFileSize))
-    if decode: print("The file size from bytes is " + str(int.from_bytes(encodeFileSize, "big")))
-    fileNameSize = len(fileNameEncoded)
-    if decode: print("The size of the file name " + str(fileNameSize))
-    newByteArray = '-|'.encode() + fileNameSize.to_bytes(1, 'big') + '-|'.encode() + fileNameEncoded + '-|'.encode() + fileContentsSize.to_bytes(2, 'big') + '-|'.encode() + fileContents
-    #newByteArray = fileNameSize.to_bytes(2, 'big') + fileNameEncoded + fileContents
-    if decode: print(newByteArray)
+    myTarFileName = myTarFileName + '.mytar'
     #Decodes the information and sends it to be put back to words
-    outFile = os.open('arch.mytar', os.O_CREAT | os.O_WRONLY)
-
+    outFile = os.open(myTarFileName, os.O_CREAT | os.O_WRONLY)
     os.write(outFile,newByteArray)
     exit
 
@@ -75,10 +83,14 @@ elif argv[1] == 'x':
             tempByte.append(byte)
     filePart.append(tempByte)
     
-    print(filePart)
-    print('File name size is: ' + str(int.from_bytes(filePart[0], "big")))
-    print('file name: ' + filePart[1].decode())
-    print('content size is: ' + str(int.from_bytes(filePart[2], "big")))
+    #print(filePart)
+    if decode:
+        print('File name size: ' + str(int.from_bytes(filePart[0], "big")))
+        print('file name: ' + filePart[1].decode())
+        print('content size is: ' + str(int.from_bytes(filePart[2], "big")))
+        print('File name size: ' + str(int.from_bytes(filePart[4], "big")))
+        print('file name: ' + filePart[5].decode())
+        print('content size is: ' + str(int.from_bytes(filePart[6], "big")))
 
 else:
     print("Not a function of mytar")
