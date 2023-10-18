@@ -18,6 +18,11 @@ def getContentAndSize(fdInput):
     contentSize = fileStatus.st_size
     fileContents = os.read(inputFile, contentSize)
     encodeFileSize = contentSize.to_bytes(2, 'big')
+    #Test#
+    outFile = os.open('outputtest/test.gif', os.O_CREAT | os.O_WRONLY)
+    print('file contents is of type ' + str(type(fileContents)))
+    os.write(outFile,bytearray(fileContents))
+    ####
     return encodeFileSize, fileContents
 
 def makeMyTarName(fileName):
@@ -28,6 +33,7 @@ def makeMyTarName(fileName):
 def frame(fdInput, fileName):
     fileNameSize,fileNameEncoded = getfileNameAndSize(fileName)
     fileContentsSize, fileContents = getContentAndSize(fdInput)
+    print(fileContents)
     
     if decode: print("Size of file " + str(fileContentsSize))
     if decode: print("The file size as a byte area " + str(int.from_bytes(fileContentsSize, "big")))
@@ -67,6 +73,7 @@ elif argv[1] == 'x':
     #print(fileContents)
     filePart = []
     tempByte = bytearray()
+    #tempByte = '-'.encode()
     preByte = 0
     read = False
     
@@ -83,24 +90,26 @@ elif argv[1] == 'x':
             tempByte.append(byte)
     filePart.append(tempByte)
     
-    #print(filePart)
+    print(filePart)
     if decode:
         print('File name size: ' + str(int.from_bytes(filePart[0], "big")))
         print('file name: ' + filePart[1].decode())
         print('content size is: ' + str(int.from_bytes(filePart[2], "big")))
-        print('File name size: ' + str(int.from_bytes(filePart[4], "big")))
-        print('file name: ' + filePart[5].decode())
-        print('content size is: ' + str(int.from_bytes(filePart[6], "big")))
+        print('file contents is of type ' + str(type(filePart[3])))
+        # print('File name size: ' + str(int.from_bytes(filePart[4], "big")))
+        # print('file name: ' + filePart[5].decode())
+        # print('content size is: ' + str(int.from_bytes(filePart[6], "big")))
+        # print('file contents is of type ' + str(type(filePart[7])))
     
-    print('src/outputtest/'+filePart[1].decode())
+    # print('src/outputtest/'+filePart[1].decode())
     # stdout = open('outputtest/'+filePart[1].decode(), "w" |c)
     # stdout.write(filePart[3])
     
     outFile = os.open('outputtest/'+filePart[1].decode(), os.O_CREAT | os.O_WRONLY)
-    os.write(outFile,filePart[3])
+    os.write(outFile,bytes(filePart[3]))
     
-    outFile = os.open('outputtest/'+filePart[5].decode(), os.O_CREAT | os.O_WRONLY)
-    os.write(outFile,filePart[7])
+    # outFile = os.open('outputtest/'+filePart[5].decode(), os.O_CREAT | os.O_WRONLY)
+    # os.write(outFile,filePart[7])
 
 else:
     print("Not a function of mytar")
