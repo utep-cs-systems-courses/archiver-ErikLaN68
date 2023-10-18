@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 import os
-from sys import argv, exit
+from sys import argv, exit, stdout
 
 decode = True
 
@@ -91,6 +91,16 @@ elif argv[1] == 'x':
         print('File name size: ' + str(int.from_bytes(filePart[4], "big")))
         print('file name: ' + filePart[5].decode())
         print('content size is: ' + str(int.from_bytes(filePart[6], "big")))
+    
+    print('src/outputtest/'+filePart[1].decode())
+    # stdout = open('outputtest/'+filePart[1].decode(), "w" |c)
+    # stdout.write(filePart[3])
+    
+    outFile = os.open('outputtest/'+filePart[1].decode(), os.O_CREAT | os.O_WRONLY)
+    os.write(outFile,filePart[3])
+    
+    outFile = os.open('outputtest/'+filePart[5].decode(), os.O_CREAT | os.O_WRONLY)
+    os.write(outFile,filePart[7])
 
 else:
     print("Not a function of mytar")
