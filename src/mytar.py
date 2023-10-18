@@ -3,47 +3,101 @@
 import os
 from sys import argv, exit, stdout
 
-decode = True
+debug = False
+debugGif = False
 
 from buf import BufferedFdWriter, BufferedFdReader, bufferedCopy
 
 def getfileNameAndSize(fileName):
     fileNameEncoded = fileName.encode()
-    fileNameSize = len(fileNameEncoded)
-    encodeSize = fileNameSize.to_bytes(1, 'big')
-    return encodeSize, fileNameEncoded
+    return fileNameEncoded
 
 def getContentAndSize(fdInput):
-    fileStatus = os.fstat(inputFile)
+    fileStatus = os.fstat(fdInput)
     contentSize = fileStatus.st_size
-    fileContents = os.read(inputFile, contentSize)
-    encodeFileSize = contentSize.to_bytes(2, 'big')
-    #Test#
-    outFile = os.open('outputtest/test.gif', os.O_CREAT | os.O_WRONLY)
-    print('file contents is of type ' + str(type(fileContents)))
-    byteArrayCont = bytearray(fileContents)
-    os.write(outFile,byteArrayCont)
-    ####
-    return encodeFileSize, fileContents
+    fileContents = os.read(fdInput, contentSize)
+    ###Test###
+    if debugGif:
+        outFile = os.open('outputtest/test.gif', os.O_CREAT | os.O_WRONLY)
+        print('file contents is of type ' + str(type(fileContents)))
+        byteArrayCont = bytearray(fileContents)
+        print('file contents is of type ' + str(type(byteArrayCont)))
+        os.write(outFile,byteArrayCont)
+    #########
+    return fileContents
 
 def makeMyTarName(fileName):
     parts = fileName.split('.')
     return parts[0]
-    
-# Will use \e as the end of line data line
-def frame(fdInput, fileName):
-    fileNameSize,fileNameEncoded = getfileNameAndSize(fileName)
-    fileContentsSize, fileContents = getContentAndSize(fdInput)
-    print(fileContents)
-    
-    if decode: print("Size of file " + str(fileContentsSize))
-    if decode: print("The file size as a byte area " + str(int.from_bytes(fileContentsSize, "big")))
-    if decode: print("The file size from bytes is " + str(fileContentsSize))
-    if decode: print("The size of the file name " + str(fileNameSize))
-    
-    newByteArray = '-|'.encode() + fileNameSize + '-|'.encode() + fileNameEncoded + '-|'.encode() + fileContentsSize + '-|'.encode() + fileContents
-    return newByteArray
 
+# Will use -| as the end of line data line
+def frame(fdInput, fileName):
+    fileNameEncoded = getfileNameAndSize(fileName)
+    fileContents = getContentAndSize(fdInput)
+    
+    if debug: 
+        print("The size of the file name " + str(fileNameEncoded))
+    
+    newByte = fileNameEncoded + '-|'.encode() + fileContents + '-|'.encode()
+    if debug: print(newByte)
+    
+    return newByte
+
+def createMyTar(myTarFileName,newByte):
+    outFile = os.open(myTarFileName, os.O_CREAT | os.O_WRONLY)
+    os.write(outFile,newByte)
+    os.close(outFile)
+
+def framer(argv):
+    myTarFileName = ''
+    newByte = ''.encode()
+    for fileName in argv:
+        inputFile = os.open(fileName, os.O_RDONLY)
+        newByte = newByte + frame(inputFile, fileName)
+        myTarFileName = myTarFileName + makeMyTarName(fileName)
+    
+    myTarFileName = myTarFileName + '.mytar'
+    
+    createMyTar(myTarFileName,newByte)
+
+def puller(fileContents):
+    filePart = []
+    tempByte = bytearray()
+    skip = False
+    for i, byte in enumerate(fileContents):
+        if i < len(fileContents)-1:
+            nextByte = fileContents[i + 1]
+            if byte == ord('-') and nextByte == ord('|'):
+                filePart.append(tempByte)
+                tempByte = bytearray()
+                skip = True
+            if skip == False:
+                tempByte.append(byte)
+            if skip and byte == ord('|'):
+                skip = False
+    return filePart
+
+def createFromMyTar(filePart):
+    for index, tarPart in enumerate(filePart):
+        if index == 0 or index % 2 == 0:
+            outFile = os.open('outputtest/'+tarPart.decode(), os.O_CREAT | os.O_WRONLY)
+        else:
+            os.write(outFile,bytes(tarPart))
+            os.close(outFile)
+
+def deFramer(inputFileName):
+    fdInput = os.open(inputFileName, os.O_RDONLY)
+    fileStatus = os.fstat(fdInput)
+    size = fileStatus.st_size
+    fileContents = os.read(fdInput, size)
+    
+    filePart = puller(fileContents)
+                
+    if debug:
+        print(filePart)
+        print('file name: ' + filePart[0].decode())
+    
+    createFromMyTar(filePart)
 
 
 if len(argv) < 2:
@@ -53,64 +107,19 @@ if len(argv) < 2:
 if argv[1] == 'c':
     argv.remove(argv[0])
     argv.remove(argv[0])
-    myTarFileName = ''
-    newByteArray = '-'.encode()
-    for fileName in argv:
-        inputFile = os.open(fileName, os.O_RDONLY)
-        newByteArray = newByteArray + frame(inputFile, fileName)
-        myTarFileName = myTarFileName + makeMyTarName(fileName)
-    
-    myTarFileName = myTarFileName + '.mytar'
-    #Decodes the information and sends it to be put back to words
-    outFile = os.open(myTarFileName, os.O_CREAT | os.O_WRONLY)
-    os.write(outFile,newByteArray)
+    print("Creating a new .mytar file from given files")
+    framer(argv)
     exit
 
 elif argv[1] == 'x':
-    print('Will extract the files from a given mytar file')
-    inputFile = os.open(argv[2], os.O_RDONLY)
-    fileContentsSize = os.path.getsize(inputFile)
-    fileContents = os.read(inputFile, fileContentsSize)
-    #print(fileContents)
-    filePart = []
-    tempByte = bytearray()
-    #tempByte = '-'.encode()
-    preByte = 0
-    read = False
+    print('Extracting the files from the given .mytar file')
+    deFramer(argv[2])
     
-    for i, byte in enumerate(fileContents):
-        if i < (len(fileContents)-1):
-            preByte = fileContents[i + 1]
-            if byte == ord('-') and preByte == ord('|'):
-                    if read:
-                        filePart.append(tempByte)
-                        tempByte = bytearray()
-                    else:
-                        read = True
-        if read and byte != ord('-') and byte != ord('|'):
-            tempByte.append(byte)
-    filePart.append(tempByte)
-    
-    print(filePart)
-    if decode:
-        print('File name size: ' + str(int.from_bytes(filePart[0], "big")))
-        print('file name: ' + filePart[1].decode())
-        print('content size is: ' + str(int.from_bytes(filePart[2], "big")))
-        print('file contents is of type ' + str(type(filePart[3])))
-        # print('File name size: ' + str(int.from_bytes(filePart[4], "big")))
-        # print('file name: ' + filePart[5].decode())
-        # print('content size is: ' + str(int.from_bytes(filePart[6], "big")))
-        # print('file contents is of type ' + str(type(filePart[7])))
-    
-    # print('src/outputtest/'+filePart[1].decode())
-    # stdout = open('outputtest/'+filePart[1].decode(), "w" |c)
-    # stdout.write(filePart[3])
-    
-    outFile = os.open('outputtest/'+filePart[1].decode(), os.O_CREAT | os.O_WRONLY)
-    os.write(outFile,bytes(filePart[3]))
-    
-    # outFile = os.open('outputtest/'+filePart[5].decode(), os.O_CREAT | os.O_WRONLY)
-    # os.write(outFile,filePart[7])
+    # # print('src/outputtest/'+filePart[1].decode())
+    # # stdout = open('outputtest/'+filePart[1].decode(), "w" |c)
+    # # stdout.write(filePart[3])
+    # # outFile = os.open('outputtest/'+filePart[5].decode(), os.O_CREAT | os.O_WRONLY)
+    # # os.write(outFile,filePart[7])
 
 else:
     print("Not a function of mytar")
