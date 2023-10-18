@@ -52,7 +52,7 @@ if argv[1] == 'c':
     exit
 
 elif argv[1] == 'x':
-    print('Will exract the files from a given mytar file')
+    print('Will extract the files from a given mytar file')
     inputFile = os.open(argv[2], os.O_RDONLY)
     fileContentsSize = os.path.getsize(inputFile)
     fileContents = os.read(inputFile, fileContentsSize)
