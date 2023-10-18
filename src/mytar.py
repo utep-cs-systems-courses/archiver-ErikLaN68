@@ -21,7 +21,8 @@ def getContentAndSize(fdInput):
     #Test#
     outFile = os.open('outputtest/test.gif', os.O_CREAT | os.O_WRONLY)
     print('file contents is of type ' + str(type(fileContents)))
-    os.write(outFile,bytearray(fileContents))
+    byteArrayCont = bytearray(fileContents)
+    os.write(outFile,byteArrayCont)
     ####
     return encodeFileSize, fileContents
 
