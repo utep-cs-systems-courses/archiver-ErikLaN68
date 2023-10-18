@@ -42,13 +42,12 @@ if argv[1] == 'c':
     if decode: print("The file size from bytes is " + str(int.from_bytes(encodeFileSize, "big")))
     fileNameSize = len(fileNameEncoded)
     if decode: print("The size of the file name " + str(fileNameSize))
-    newByteArray = fileNameSize.to_bytes(1, 'big') + fileNameEncoded + fileContentsSize.to_bytes(2, 'big') + fileContents
+    newByteArray = '-|'.encode() + fileNameSize.to_bytes(1, 'big') + '-|'.encode() + fileNameEncoded + '-|'.encode() + fileContentsSize.to_bytes(2, 'big') + '-|'.encode() + fileContents
     #newByteArray = fileNameSize.to_bytes(2, 'big') + fileNameEncoded + fileContents
     if decode: print(newByteArray)
     #Decodes the information and sends it to be put back to words
-    outFile = os.open('arch.mytar', os.O_WRONLY | os.O_CREAT)
+    outFile = os.open('arch.mytar', os.O_CREAT | os.O_WRONLY)
 
-    #Runs through the dict to get words and amounts
     os.write(outFile,newByteArray)
     exit
 
@@ -57,8 +56,29 @@ elif argv[1] == 'x':
     inputFile = os.open(argv[2], os.O_RDONLY)
     fileContentsSize = os.path.getsize(inputFile)
     fileContents = os.read(inputFile, fileContentsSize)
-    print(fileContents)
-    exit
+    #print(fileContents)
+    filePart = []
+    tempByte = bytearray()
+    preByte = 0
+    read = False
+    
+    for i, byte in enumerate(fileContents):
+        if i < (len(fileContents)-1):
+            preByte = fileContents[i + 1]
+            if byte == ord('-') and preByte == ord('|'):
+                    if read:
+                        filePart.append(tempByte)
+                        tempByte = bytearray()
+                    else:
+                        read = True
+        if read and byte != ord('-') and byte != ord('|'):
+            tempByte.append(byte)
+    filePart.append(tempByte)
+    
+    print(filePart)
+    print('File name size is: ' + str(int.from_bytes(filePart[0], "big")))
+    print('file name: ' + filePart[1].decode())
+    print('content size is: ' + str(int.from_bytes(filePart[2], "big")))
 
 else:
     print("Not a function of mytar")
