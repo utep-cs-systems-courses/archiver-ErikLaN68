@@ -118,6 +118,7 @@ elif argv[1] == 'x':
     # # print('src/outputtest/'+filePart[1].decode())
     # # stdout = open('outputtest/'+filePart[1].decode(), "w" |c)
     # # stdout.write(filePart[3])
+    # os.write(just use stdout here and the OS will handle the rest or 1)
     # # outFile = os.open('outputtest/'+filePart[5].decode(), os.O_CREAT | os.O_WRONLY)
     # # os.write(outFile,filePart[7])
 
