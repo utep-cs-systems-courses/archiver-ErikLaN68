@@ -13,9 +13,7 @@ def getfileNameAndSize(fileName):
     return fileNameEncoded
 
 def getContentAndSize(fdInput):
-    fileStatus = os.fstat(fdInput)
-    contentSize = fileStatus.st_size
-    fileContents = os.read(fdInput, contentSize)
+    fileContents = os.read(fdInput, os.fstat(fdInput).st_size)
     ###Test###
     if debugGif:
         outFile = os.open('outputtest/test.gif', os.O_CREAT | os.O_WRONLY)
@@ -80,17 +78,13 @@ def puller(fileContents):
 def createFromMyTar(filePart):
     for index, tarPart in enumerate(filePart):
         if index == 0 or index % 2 == 0:
-            outFile = os.open('outputtest/'+tarPart.decode(), os.O_CREAT | os.O_WRONLY)
+            outFile = os.open(tarPart.decode(), os.O_CREAT | os.O_WRONLY)
         else:
             os.write(outFile,bytes(tarPart))
             os.close(outFile)
 
-def deFramer(inputFileName):
-    fdInput = os.open(inputFileName, os.O_RDONLY)
-    fileStatus = os.fstat(fdInput)
-    size = fileStatus.st_size
-    fileContents = os.read(fdInput, size)
-    
+def deFramer():
+    fileContents = os.read(0, os.fstat(0).st_size)
     filePart = puller(fileContents)
                 
     if debug:
@@ -100,9 +94,9 @@ def deFramer(inputFileName):
     createFromMyTar(filePart)
 
 
-if len(argv) < 2:
-    #print("Not a valid amount of inputs")
-    exit
+# if len(argv) < 2:
+#     #print("Not a valid amount of inputs")
+#     exit
 
 if argv[1] == 'c':
     argv.remove(argv[0])
@@ -113,14 +107,7 @@ if argv[1] == 'c':
 
 elif argv[1] == 'x':
     #print('Extracting the files from the given .mytar file')
-    deFramer(argv[2])
-    
-    # # print('src/outputtest/'+filePart[1].decode())
-    # # stdout = open('outputtest/'+filePart[1].decode(), "w" |c)
-    # # stdout.write(filePart[3])
-    # os.write(just use stdout here and the OS will handle the rest or 1)
-    # # outFile = os.open('outputtest/'+filePart[5].decode(), os.O_CREAT | os.O_WRONLY)
-    # # os.write(outFile,filePart[7])
+    deFramer()
 
 else:
     print("Not a function of mytar")
