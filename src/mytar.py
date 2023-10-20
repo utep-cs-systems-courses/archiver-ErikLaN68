@@ -44,9 +44,9 @@ def frame(fdInput, fileName):
     return newByte
 
 def createMyTar(myTarFileName,newByte):
-    outFile = os.open(myTarFileName, os.O_CREAT | os.O_WRONLY)
-    os.write(outFile,newByte)
-    os.close(outFile)
+    #outFile = os.open(1, os.O_CREAT | os.O_WRONLY)
+    os.write(1,newByte)
+    os.close(1)
 
 def framer(argv):
     myTarFileName = ''
@@ -101,18 +101,18 @@ def deFramer(inputFileName):
 
 
 if len(argv) < 2:
-    print("Not a valid amount of inputs")
+    #print("Not a valid amount of inputs")
     exit
 
 if argv[1] == 'c':
     argv.remove(argv[0])
     argv.remove(argv[0])
-    print("Creating a new .mytar file from given files")
+    #print("Creating a new .mytar file from given files")
     framer(argv)
     exit
 
 elif argv[1] == 'x':
-    print('Extracting the files from the given .mytar file')
+    #print('Extracting the files from the given .mytar file')
     deFramer(argv[2])
     
     # # print('src/outputtest/'+filePart[1].decode())
