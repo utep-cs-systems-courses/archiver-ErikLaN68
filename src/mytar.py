@@ -8,11 +8,11 @@ debugGif = False
 
 from buf import BufferedFdWriter, BufferedFdReader, bufferedCopy
 
-def getfileNameAndSize(fileName):
+def getfileName(fileName):
     fileNameEncoded = fileName.encode()
     return fileNameEncoded
 
-def getContentAndSize(fdInput):
+def getContent(fdInput):
     fileContents = os.read(fdInput, os.fstat(fdInput).st_size)
     ###Test###
     if debugGif:
@@ -23,40 +23,35 @@ def getContentAndSize(fdInput):
         os.write(outFile,byteArrayCont)
     #########
     return fileContents
-
-def makeMyTarName(fileName):
-    parts = fileName.split('.')
-    return parts[0]
+# 
+# def makeMyTarName(fileName):
+#     parts = fileName.split('.')
+#     return parts[0]
 
 # Will use -| as the end of line data line
 def frame(fdInput, fileName):
-    fileNameEncoded = getfileNameAndSize(fileName)
-    fileContents = getContentAndSize(fdInput)
+    fileNameEncoded = getfileName(fileName)
+    fileContents = getContent(fdInput)
     
-    if debug: 
-        print("The size of the file name " + str(fileNameEncoded))
+    if debug: print("The size of the file name " + str(fileNameEncoded))
     
     newByte = fileNameEncoded + '-|'.encode() + fileContents + '-|'.encode()
     if debug: print(newByte)
     
     return newByte
 
-def createMyTar(myTarFileName,newByte):
+def createMyTar(newByte):
     #outFile = os.open(1, os.O_CREAT | os.O_WRONLY)
     os.write(1,newByte)
     os.close(1)
 
 def framer(argv):
-    myTarFileName = ''
     newByte = ''.encode()
     for fileName in argv:
         inputFile = os.open(fileName, os.O_RDONLY)
         newByte = newByte + frame(inputFile, fileName)
-        myTarFileName = myTarFileName + makeMyTarName(fileName)
     
-    myTarFileName = myTarFileName + '.mytar'
-    
-    createMyTar(myTarFileName,newByte)
+    createMyTar(newByte)
 
 def puller(fileContents):
     filePart = []
